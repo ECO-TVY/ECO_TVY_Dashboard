@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'war'
-    id 'org.springframework.boot' version '3.1.6'
+    id 'org.springframework.boot' version '3.5.3'
     id 'io.spring.dependency-management' version '1.1.3'
 //    id 'com.ewerk.gradle.plugins.querydsl' version "1.0.10"
 }
@@ -9,7 +9,7 @@ group = 'com'
 version = '0.0.1-SNAPSHOT'
 
 java {
-    sourceCompatibility = '17'
+    sourceCompatibility = '21'
 }
 configurations {
     compileOnly {
@@ -19,40 +19,72 @@ configurations {
 repositories {
     mavenCentral()
 }
+
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.projectlombok:lombok:1.18.28'
-    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
-    implementation 'com.querydsl:querydsl-apt'
-    implementation 'com.querydsl:querydsl-core'
-    implementation 'com.querydsl:querydsl-collections'
-    implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.2.1'
-    implementation 'org.springframework.boot:spring-boot-devtools:3.1.1'
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.5'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
-    implementation 'net.coobird:thumbnailator:0.4.16'
-    implementation 'org.modelmapper:modelmapper:3.1.0'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // Ensure jakarta.persistence API is on compile classpath (some IDEs/apt require it explicitly)
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+    implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'com.github.librepdf:openpdf:1.3.39'
+    // Excel generation
+    implementation 'org.apache.poi:poi:5.2.5'
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
+//    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
+    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+    implementation 'com.querydsl:querydsl-apt:5.0.0:jakarta'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'io.zipkin.brave:brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
-    annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
     annotationProcessor 'org.projectlombok:lombok'
-    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
-    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.4.Final'
-    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
-    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
+    annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'
+    //modelmapper
+    implementation 'org.modelmapper:modelmapper:3.2.0'
 
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+
+    // QR code generation
+    implementation 'com.google.zxing:core:3.5.2'
+    implementation 'com.google.zxing:javase:3.5.2'
+
+    // Jenkins client - Using Spring WebClient for REST API calls
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // WebSocket for real-time monitoring
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    //smtp
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+    annotationProcessor 'jakarta.annotation:jakarta.annotation-api:2.1.1'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.5'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
+
 tasks.named('test') {
     useJUnitPlatform()
 }
+
 def querydslDir = "src/main/generated"
 tasks.withType(JavaCompile) {
     options.getGeneratedSourceOutputDirectory().set(file(querydslDir))
