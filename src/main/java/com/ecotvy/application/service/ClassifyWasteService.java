@@ -9,6 +9,7 @@ import com.ecotvy.application.port.in.ClassifyWasteUseCase;
 import com.ecotvy.application.port.in.LocationServiceUseCase;
 import com.ecotvy.application.port.out.*;
 import com.ecotvy.infrastructure.exception.ResourceNotFoundException;
+import com.ecotvy.domain.location.AddressParts;
 import com.ecotvy.domain.user.User;
 import com.ecotvy.domain.waste.Classification;
 import com.ecotvy.domain.waste.WasteType;
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -140,14 +142,12 @@ public class ClassifyWasteService implements ClassifyWasteUseCase {
     }
 
     private void setDisposalInfo(Classification classification, User user) {
-        if (user.getAddress() == null || user.getAddress().isBlank()) {
-            return; // 주소가 없는 계정은 지역 배출 규정 없이 분류 결과만 저장
-        }
-        String[] addressParts = user.getAddress().split(" ");
-        if (addressParts.length >= 3) {
-            String city = addressParts[0];
-            String district = addressParts[1];
-            String dong = addressParts[2];
+        // 주소가 없거나 "시도 시군구 동"으로 나눌 수 없는 계정은 지역 배출 규정 없이 분류 결과만 저장
+        Optional<AddressParts> parsed = AddressParts.parse(user.getAddress());
+        if (parsed.isPresent()) {
+            String city = parsed.get().city();
+            String district = parsed.get().district();
+            String dong = parsed.get().dong();
 
             // 캐시 키 생성 (관리자가 규정 변경 시 같은 키로 무효화)
             String cacheKey = CacheKeys.locationRule(city, district, dong, classification.getWasteType().name());
