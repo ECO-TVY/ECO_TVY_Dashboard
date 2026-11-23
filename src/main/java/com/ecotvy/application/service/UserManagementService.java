@@ -82,11 +82,18 @@ public class UserManagementService implements UserManagementUseCase {
         User user = userRepositoryPort.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        String nickname = request.getNickname() == null ? null : AccountRules.nickname(request.getNickname());
+        validateCoordinates(request.getLatitude(), request.getLongitude());
+
         user.updateProfile(
-                request.getNickname(),
+                nickname,
                 request.getAddress(),
                 request.getDetailAddress()
         );
+        // 주소와 좌표를 같은 트랜잭션에서 저장 → 주소만 바뀌고 좌표는 옛 값으로 남는 상태가 생기지 않음
+        if (request.getLatitude() != null) {
+            user.updateLocation(request.getLatitude(), request.getLongitude());
+        }
 
         User saved = userRepositoryPort.save(user);
         return toDto(saved);
@@ -117,6 +124,10 @@ public class UserManagementService implements UserManagementUseCase {
         User user = userRepositoryPort.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        if (latitude == null || longitude == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "좌표가 올바르지 않습니다");
+        }
+        validateCoordinates(latitude, longitude);
         user.updateLocation(latitude, longitude);
         userRepositoryPort.save(user);
     }
@@ -129,6 +140,17 @@ public class UserManagementService implements UserManagementUseCase {
         if (isBlank(dto.getAddress())
                 || dto.getLatitude() == null || dto.getLongitude() == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+        validateCoordinates(dto.getLatitude(), dto.getLongitude());
+    }
+
+    /** 위도·경도는 둘 다 있거나 둘 다 없어야 하고, 유효 범위 안이어야 한다 */
+    static void validateCoordinates(Double latitude, Double longitude) {
+        if (latitude == null && longitude == null) return;
+        if (latitude == null || longitude == null
+                || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180
+                || latitude.isNaN() || longitude.isNaN()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE, "좌표가 올바르지 않습니다");
         }
     }
 
