@@ -40,8 +40,9 @@ public class MisclassificationReport extends BaseTimeEntity {
         this.status = ReportStatus.APPROVED;
     }
 
-    public void reject() {
+    public void reject(String reason) {
         this.status = ReportStatus.REJECTED;
+        this.adminNote = reason;
     }
 }
 

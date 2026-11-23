@@ -11,6 +11,7 @@ public interface AdminRepositoryPort {
     Optional<AIModel> findByVersion(String version);
     List<AIModel> findAllAIModels();
     AIModel save(AIModel aiModel);
+    void delete(AIModel aiModel);
     List<MisclassificationReport> findPendingReports();
     Optional<MisclassificationReport> findReportById(Long id);
     MisclassificationReport save(MisclassificationReport report);

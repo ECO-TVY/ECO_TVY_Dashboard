@@ -7,7 +7,6 @@ public class CommonConstants {
     public static final String API_BASE_PATH = "/api/" + API_VERSION;
 
     // JWT 관련 상수
-    public static final String JWT_SECRET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=~[]{}|;:,.<>?/abcdefgh";
     public static final long JWT_ACCESS_TOKEN_EXPIRATION_TIME = 1800000; // 30분 (밀리초)
     public static final long JWT_REFRESH_TOKEN_EXPIRATION_TIME = 604800000; // 7일 (밀리초)
     public static final String JWT_TOKEN_PREFIX = "Bearer ";

@@ -4,6 +4,8 @@ import com.ecotvy.infrastructure.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -30,15 +32,13 @@ public class User extends BaseTimeEntity {
 
     private String providerId;
 
-    @Column(nullable = false)
+    // 주소·좌표는 선택: 일반 회원가입은 서비스에서 필수로 검증하지만, 관리자가 만든 관리자 계정은 없을 수 있다
     private String address; // 시/구/동
 
     private String detailAddress;
 
-    @Column(nullable = false)
     private Double latitude;
 
-    @Column(nullable = false)
     private Double longitude;
 
     @Enumerated(EnumType.STRING)
@@ -50,8 +50,20 @@ public class User extends BaseTimeEntity {
     @Builder.Default
     private Boolean active = true;
 
-    private Integer level; // 배출 성취도 레벨
-    private Integer totalClassifications; // 총 분류 횟수
+    @Builder.Default
+    private Integer level = 1; // 배출 성취도 레벨
+
+    @Builder.Default
+    private Integer totalClassifications = 0; // 총 분류 횟수
+
+    /**
+     * 다음 로그인 후 비밀번호를 반드시 바꿔야 하는지 (관리자가 만든 계정의 초기 비밀번호).
+     * 기존 행은 컬럼 추가 시 NULL이므로 requiresPasswordChange()로 판단한다.
+     */
+    @Builder.Default
+    private Boolean mustChangePassword = false;
+
+    private LocalDateTime passwordChangedAt;
 
     public void updateProfile(String nickname, String address, String detailAddress) {
         if (nickname != null) this.nickname = nickname;
@@ -62,6 +74,25 @@ public class User extends BaseTimeEntity {
     public void updateLocation(Double latitude, Double longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
+    }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+        this.mustChangePassword = false;
+        this.passwordChangedAt = LocalDateTime.now();
+    }
+
+    /** 관리자 초기화 등으로 받은 임시 비밀번호 → 다음 로그인 때 변경 강제 */
+    public void requirePasswordChange() {
+        this.mustChangePassword = true;
+    }
+
+    public boolean requiresPasswordChange() {
+        return Boolean.TRUE.equals(mustChangePassword);
+    }
+
+    public void changeRole(UserRole role) {
+        this.role = role;
     }
 
     public void incrementClassification() {

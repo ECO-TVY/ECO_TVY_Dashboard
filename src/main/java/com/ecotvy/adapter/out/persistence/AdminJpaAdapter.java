@@ -43,6 +43,11 @@ public class AdminJpaAdapter implements AdminRepositoryPort {
     }
 
     @Override
+    public void delete(AIModel aiModel) {
+        aiModelJpaRepository.delete(aiModel);
+    }
+
+    @Override
     public List<MisclassificationReport> findPendingReports() {
         return misclassificationReportJpaRepository.findByStatus(
                 com.ecotvy.domain.admin.ReportStatus.PENDING);

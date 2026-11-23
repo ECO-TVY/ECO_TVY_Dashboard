@@ -26,13 +26,14 @@ public class RedisCacheAdapter implements CachePort {
                 return null;
             }
 
-            if (type.isInstance(value)) {
-                return (T) value;
+            // put()은 항상 JSON 문자열로 저장하므로 문자열은 먼저 JSON으로 푼다.
+            // (isInstance를 먼저 검사하면 String 타입 값이 '"v1.0.0"'처럼 따옴표가 붙은 채 반환됨)
+            if (value instanceof String json) {
+                return objectMapper.readValue(json, type);
             }
 
-            // JSON 역직렬화
-            if (value instanceof String) {
-                return objectMapper.readValue((String) value, type);
+            if (type.isInstance(value)) {
+                return (T) value;
             }
 
             return objectMapper.convertValue(value, type);
