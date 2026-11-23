@@ -31,6 +31,11 @@ public class LocationJpaAdapter implements LocationRepositoryPort {
     }
 
     @Override
+    public Optional<Location> findById(Long id) {
+        return locationJpaRepository.findById(id);
+    }
+
+    @Override
     public Location save(Location location) {
         return locationJpaRepository.save(location);
     }

@@ -82,6 +82,27 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
+    /** 모델 등록 (비활성 상태로 등록, 활성화는 /activate에서 연결 확인 후) */
+    @PostMapping("/ai-models")
+    public ResponseEntity<ApiResponse<AIModelDto>> registerAIModel(@RequestBody AIModelRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(adminUseCase.registerAIModel(request)));
+    }
+
+    /** 서버 URL·설명·정확도 수정 (버전은 변경 불가) */
+    @PutMapping("/ai-models/{version}")
+    public ResponseEntity<ApiResponse<AIModelDto>> updateAIModel(
+            @PathVariable String version,
+            @RequestBody AIModelRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(adminUseCase.updateAIModel(version, request)));
+    }
+
+    /** 사용 중이 아닌 모델 삭제 */
+    @DeleteMapping("/ai-models/{version}")
+    public ResponseEntity<ApiResponse<Void>> deleteAIModel(@PathVariable String version) {
+        adminUseCase.deleteAIModel(version);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
     @PostMapping("/ai-models/{version}/activate")
     public ResponseEntity<ApiResponse<AIModelDto>> activateAIModel(@PathVariable String version) {
         AIModelDto result = adminUseCase.activateAIModel(version);

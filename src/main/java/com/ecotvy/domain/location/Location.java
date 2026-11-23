@@ -41,5 +41,16 @@ public class Location extends BaseTimeEntity {
     @Column(nullable = false)
     @Builder.Default
     private Boolean active = true;
+
+    public void update(String city, String district, String dong, WasteType wasteType,
+                       String disposalDay, String disposalTime, String disposalGuide) {
+        this.city = city;
+        this.district = district;
+        this.dong = dong;
+        this.wasteType = wasteType;
+        this.disposalDay = disposalDay;
+        this.disposalTime = disposalTime;
+        this.disposalGuide = disposalGuide;
+    }
 }
 

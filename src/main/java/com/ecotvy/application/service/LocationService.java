@@ -7,11 +7,11 @@ import com.ecotvy.application.port.out.LocationRepositoryPort;
 import com.ecotvy.infrastructure.exception.ResourceNotFoundException;
 import com.ecotvy.domain.location.DisposalPoint;
 import com.ecotvy.domain.location.Location;
-import com.ecotvy.domain.waste.WasteType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,7 +25,7 @@ public class LocationService implements LocationServiceUseCase {
     @Override
     public LocationDisposalInfo getDisposalInfo(String city, String district, String dong, String wasteType) {
         Location location = locationRepositoryPort.findByCityAndDistrictAndDongAndWasteType(
-                city, district, dong, WasteType.valueOf(wasteType))
+                city, district, dong, wasteType)
                 .orElseThrow(() -> new ResourceNotFoundException("Location rule not found"));
 
         return LocationDisposalInfo.builder()
@@ -41,7 +41,9 @@ public class LocationService implements LocationServiceUseCase {
         List<DisposalPoint> points = locationRepositoryPort.findNearbyDisposalPoints(
                 latitude, longitude, radiusKm);
 
+        // 저장소는 활성 장소 전체를 반환하므로 여기서 반경으로 거르고 가까운 순으로 정렬
         return points.stream()
+                .filter(point -> point.getLatitude() != null && point.getLongitude() != null)
                 .map(point -> {
                     double distance = calculateDistance(latitude, longitude,
                             point.getLatitude(), point.getLongitude());
@@ -55,6 +57,8 @@ public class LocationService implements LocationServiceUseCase {
                             .distanceKm(distance)
                             .build();
                 })
+                .filter(dto -> dto.getDistanceKm() <= radiusKm)
+                .sorted(Comparator.comparingDouble(DisposalPointDto::getDistanceKm))
                 .collect(Collectors.toList());
     }
 

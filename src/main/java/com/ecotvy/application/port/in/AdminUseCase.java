@@ -4,6 +4,7 @@ import com.ecotvy.application.dto.AdminDashboardDto;
 import com.ecotvy.application.dto.LocationRuleDto;
 import com.ecotvy.application.dto.MisclassificationReviewDto;
 import com.ecotvy.application.dto.AIModelDto;
+import com.ecotvy.application.dto.AIModelRequest;
 
 import java.util.List;
 
@@ -18,5 +19,8 @@ public interface AdminUseCase {
     void rejectMisclassification(Long reportId, String reason);
     List<AIModelDto> getAIModels();
     AIModelDto activateAIModel(String version);
+    AIModelDto registerAIModel(AIModelRequest request);
+    AIModelDto updateAIModel(String version, AIModelRequest request);
+    void deleteAIModel(String version);
 }
 
