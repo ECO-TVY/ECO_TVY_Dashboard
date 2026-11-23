@@ -18,7 +18,7 @@ public abstract class BaseTimeEntity {
     private LocalDateTime createDt;
 
     @LastModifiedDate
-    @Column(name = "UPDATE_DT", updatable = false, nullable = false)
+    @Column(name = "UPDATE_DT", nullable = false)
     private LocalDateTime updateDt;
 
     public LocalDateTime getCreateDt() {

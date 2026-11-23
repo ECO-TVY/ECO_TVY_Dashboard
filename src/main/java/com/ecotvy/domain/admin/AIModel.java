@@ -31,6 +31,12 @@ public class AIModel extends BaseTimeEntity {
 
     private Double accuracy; // 모델 정확도
 
+    public void update(String modelUrl, String description, Double accuracy) {
+        this.modelUrl = modelUrl;
+        this.description = description;
+        this.accuracy = accuracy;
+    }
+
     public void activate() {
         this.isActive = true;
     }

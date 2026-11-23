@@ -1,6 +1,7 @@
 package com.ecotvy.application.service;
 
 import com.ecotvy.application.dto.AIClassificationResponse;
+import com.ecotvy.application.dto.ActiveModelInfo;
 import com.ecotvy.application.dto.ClassificationResult;
 import com.ecotvy.application.dto.DisposalPointDto;
 import com.ecotvy.application.dto.LocationDisposalInfo;
@@ -36,6 +37,7 @@ public class ClassifyWasteService implements ClassifyWasteUseCase {
     private final AdminRepositoryPort adminRepositoryPort;
     private final CachePort cachePort;
 
+    private static final String DEFAULT_MODEL_VERSION = "v1.0.0";
     private static final int MAX_IMAGE_SIZE_MB = 3;
     private static final int MAX_WIDTH = 1024;
     private static final int MAX_HEIGHT = 1024;
@@ -53,12 +55,12 @@ public class ClassifyWasteService implements ClassifyWasteUseCase {
         String imageUrl = imageStoragePort.uploadImage(imageFile, userId.toString());
 
         try {
-            // 4. AI 모델 버전 조회
-            String modelVersion = getActiveModelVersion();
+            // 4. 활성 AI 모델 조회 (버전 + 모델 서버 주소)
+            ActiveModelInfo activeModel = getActiveModel();
 
-            // 5. AI 분류 요청
+            // 5. AI 분류 요청 — 활성 모델의 서버로
             AIClassificationResponse aiResponse = aiClassificationPort.classify(
-                    new ByteArrayInputStream(imageBytes), modelVersion);
+                    new ByteArrayInputStream(imageBytes), activeModel.version(), activeModel.serverUrl());
 
             // 6. 분류 결과 저장
             Classification classification = Classification.builder()
@@ -79,9 +81,10 @@ public class ClassifyWasteService implements ClassifyWasteUseCase {
             user.incrementClassification();
             userRepositoryPort.save(user);
 
-            // 9. 근처 배출 장소 조회
-            List<DisposalPointDto> nearbyPoints = locationServiceUseCase.getNearbyDisposalPoints(
-                    user.getLatitude(), user.getLongitude(), 2.0);
+            // 9. 근처 배출 장소 조회 (좌표가 없는 계정은 생략)
+            List<DisposalPointDto> nearbyPoints = (user.getLatitude() == null || user.getLongitude() == null)
+                    ? List.of()
+                    : locationServiceUseCase.getNearbyDisposalPoints(user.getLatitude(), user.getLongitude(), 2.0);
 
             // 10. 결과 반환
             return ClassificationResult.builder()
@@ -90,7 +93,7 @@ public class ClassifyWasteService implements ClassifyWasteUseCase {
                     .wasteTypeDisplayName(savedClassification.getWasteType().getDisplayName())
                     .confidence(savedClassification.getConfidence())
                     .labels(savedClassification.getLabels())
-                    .imageUrl(savedClassification.getImageUrl())
+                    .imageUrl(imageStoragePort.presignedUrl(savedClassification.getImageUrl()))
                     .disposalGuide(savedClassification.getDisposalGuide())
                     .disposalDay(savedClassification.getDisposalDay())
                     .disposalTime(savedClassification.getDisposalTime())
@@ -119,38 +122,50 @@ public class ClassifyWasteService implements ClassifyWasteUseCase {
         }
     }
 
-    private String getActiveModelVersion() {
-        // 캐시에서 먼저 조회
-        String cachedVersion = cachePort.get("ai:model:active:version", String.class);
-        if (cachedVersion != null) {
-            return cachedVersion;
+    private ActiveModelInfo getActiveModel() {
+        // 캐시에서 먼저 조회 (관리자가 활성 모델을 바꾸면 AdminService가 무효화)
+        ActiveModelInfo cached = cachePort.get(CacheKeys.ACTIVE_MODEL, ActiveModelInfo.class);
+        if (cached != null) {
+            return cached;
         }
 
-        // DB에서 조회
-        String version = adminRepositoryPort.findActiveAIModel()
-                .map(model -> model.getVersion())
-                .orElse("v1.0.0");
+        // DB에서 조회. 활성 모델이 없으면 기본 버전 + 설정의 기본 서버(serverUrl=null)
+        ActiveModelInfo active = adminRepositoryPort.findActiveAIModel()
+                .map(model -> new ActiveModelInfo(model.getVersion(), model.getModelUrl()))
+                .orElse(new ActiveModelInfo(DEFAULT_MODEL_VERSION, null));
 
         // 캐시에 저장 (1시간)
-        cachePort.put("ai:model:active:version", version, 3600);
-        return version;
+        cachePort.put(CacheKeys.ACTIVE_MODEL, active, 3600);
+        return active;
     }
 
     private void setDisposalInfo(Classification classification, User user) {
+        if (user.getAddress() == null || user.getAddress().isBlank()) {
+            return; // 주소가 없는 계정은 지역 배출 규정 없이 분류 결과만 저장
+        }
         String[] addressParts = user.getAddress().split(" ");
         if (addressParts.length >= 3) {
             String city = addressParts[0];
             String district = addressParts[1];
             String dong = addressParts[2];
 
-            // 캐시 키 생성
-            String cacheKey = String.format("location:%s:%s:%s:%s",
-                    city, district, dong, classification.getWasteType().name());
+            // 캐시 키 생성 (관리자가 규정 변경 시 같은 키로 무효화)
+            String cacheKey = CacheKeys.locationRule(city, district, dong, classification.getWasteType().name());
 
             LocationDisposalInfo info = cachePort.get(cacheKey, LocationDisposalInfo.class);
             if (info == null) {
-                info = locationServiceUseCase.getDisposalInfo(
-                        city, district, dong, classification.getWasteType().name());
+                // 규정이 없는 지역이어도 분류 자체는 성공해야 하므로 예외를 던지는 getDisposalInfo 대신
+                // 저장소를 직접 조회한다. (@Transactional 메서드가 던진 예외는 catch해도
+                // 바깥 트랜잭션을 rollback-only로 만들어 커밋 시 UnexpectedRollbackException이 남)
+                info = locationRepositoryPort.findByCityAndDistrictAndDongAndWasteType(
+                                city, district, dong, classification.getWasteType().name())
+                        .map(location -> LocationDisposalInfo.builder()
+                                .wasteType(location.getWasteType().name())
+                                .disposalDay(location.getDisposalDay())
+                                .disposalTime(location.getDisposalTime())
+                                .disposalGuide(location.getDisposalGuide())
+                                .build())
+                        .orElse(null);
                 if (info != null) {
                     cachePort.put(cacheKey, info, 3600); // 1시간 캐시
                 }

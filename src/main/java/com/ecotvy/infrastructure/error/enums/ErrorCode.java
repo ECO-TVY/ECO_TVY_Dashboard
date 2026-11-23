@@ -27,6 +27,10 @@ public enum ErrorCode {
     USER_ALREADY_EXISTS(3001, "이미 존재하는 사용자입니다"),
     INVALID_EMAIL_FORMAT(3002, "올바르지 않은 이메일 형식입니다"),
     INVALID_PASSWORD_FORMAT(3003, "올바르지 않은 비밀번호 형식입니다"),
+    CURRENT_PASSWORD_MISMATCH(3004, "현재 비밀번호가 일치하지 않습니다"),
+    SAME_AS_CURRENT_PASSWORD(3005, "현재 비밀번호와 다른 비밀번호를 입력해 주세요"),
+    PASSWORD_CHANGE_REQUIRED(3006, "비밀번호를 변경해야 서비스를 이용할 수 있습니다"),
+    RESET_TOKEN_INVALID(3007, "재설정 링크가 만료되었거나 이미 사용되었습니다. 다시 요청해 주세요"),
 
     // 데이터 관련 에러 (4000번대)
     DATA_NOT_FOUND(4000, "데이터를 찾을 수 없습니다"),
@@ -56,7 +60,10 @@ public enum ErrorCode {
     // 요청 제한 관련 에러 (8000번대)
     TOO_MANY_REQUESTS(8000, "요청이 너무 많습니다"),
     TOO_MANY_ATTEMPTS(8001, "시도 횟수를 초과했습니다"),
-    RESOURCE_NOT_FOUND(8002, "리소스를 찾을 수 없습니다");
+    RESOURCE_NOT_FOUND(8002, "리소스를 찾을 수 없습니다"),
+
+    // AI 모델 관련 에러 (9000번대)
+    AI_SERVER_UNREACHABLE(9000, "AI 모델 서버에 연결할 수 없습니다");
 
     private final int code;
     private final String message;

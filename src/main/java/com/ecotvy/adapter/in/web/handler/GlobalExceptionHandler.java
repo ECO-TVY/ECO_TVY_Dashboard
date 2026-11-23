@@ -37,15 +37,14 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<ErrorResponse>> handleBusinessException(BusinessException e, HttpServletRequest request) {
-
-        ErrorResponse errorResponse = ErrorResponse.of(
-                e.getErrorCode(),
-                request.getRequestURI()
-        );
-
+        // 예외에 담긴 구체적 메시지를 그대로 전달 (없으면 BusinessException 생성자가 ErrorCode 기본 문구로 채움)
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(errorResponse.getMessage(), String.valueOf(errorResponse.getCode())));
+                .body(ApiResponse.error(messageOf(e), String.valueOf(e.getErrorCode().getCode())));
+    }
+
+    private static String messageOf(BusinessException e) {
+        return e.getMessage() != null ? e.getMessage() : e.getErrorCode().getMessage();
     }
 
     /**
@@ -54,15 +53,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(com.ecotvy.infrastructure.exception.AuthenticationException.class)
     public ResponseEntity<ApiResponse<ErrorResponse>> handleAuthenticationException(com.ecotvy.infrastructure.exception.AuthenticationException e,
                                                                                     HttpServletRequest request) {
-
-        ErrorResponse errorResponse = ErrorResponse.of(
-                e.getErrorCode(),
-                request.getRequestURI()
-        );
-
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error(errorResponse.getMessage(), String.valueOf(errorResponse.getCode())));
+                .body(ApiResponse.error(messageOf(e), String.valueOf(e.getErrorCode().getCode())));
     }
 
     /**
