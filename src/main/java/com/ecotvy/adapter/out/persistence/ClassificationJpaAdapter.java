@@ -2,6 +2,7 @@ package com.ecotvy.adapter.out.persistence;
 
 import com.ecotvy.application.port.out.ClassificationRepositoryPort;
 import com.ecotvy.domain.waste.Classification;
+import com.ecotvy.domain.waste.WasteType;
 import com.ecotvy.adapter.out.persistence.repository.ClassificationJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +32,13 @@ public class ClassificationJpaAdapter implements ClassificationRepositoryPort {
     public List<Classification> findByUserIdOrderByCreateDtDesc(Long userId, Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page, size);
         return classificationJpaRepository.findByUserIdOrderByCreateDtDesc(userId, pageable);
+    }
+
+    @Override
+    public List<Classification> findByUserIdAndWasteTypeOrderByCreateDtDesc(
+            Long userId, WasteType wasteType, Integer page, Integer size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return classificationJpaRepository.findByUserIdAndWasteTypeOrderByCreateDtDesc(userId, wasteType, pageable);
     }
 
     @Override
