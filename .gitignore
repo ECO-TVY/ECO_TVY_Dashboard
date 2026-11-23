@@ -40,3 +40,6 @@ out/
 .env
 .env.*
 !.env.example
+
+### QueryDSL 생성 코드 (build.gradle querydslDir) ###
+src/main/generated/

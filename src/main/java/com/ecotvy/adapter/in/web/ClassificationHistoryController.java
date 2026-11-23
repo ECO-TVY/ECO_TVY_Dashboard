@@ -21,8 +21,9 @@ public class ClassificationHistoryController {
     public ResponseEntity<ApiResponse<List<ClassificationHistoryDto>>> getHistory(
             @AuthenticationPrincipal Long userId,
             @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "20") Integer size) {
-        List<ClassificationHistoryDto> result = classificationHistoryUseCase.getHistory(userId, page, size);
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(required = false) String wasteType) {
+        List<ClassificationHistoryDto> result = classificationHistoryUseCase.getHistory(userId, page, size, wasteType);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
